@@ -15,8 +15,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 <body>
 <div class="container">
     <div class="title margin">
-        <p id="title">Foster Hearable / PPG Sample</p>
-        <p id="subtitle">Notifyでデータ読み込み</p>
+        <p id="title">Foster Hearable</p>
+        <p id="subtitle">PPG, HeartRate Viewer</p>
     </div>
 
     <div class="chart">
@@ -30,6 +30,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     <div class="contents margin">
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
+        <button id="Invert" class="button">Invert</button>
         <hr>
         <div id="device_name"> </div>
         <div id="uuid_name"> </div>
@@ -37,7 +38,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         <div id="status"> </div>
     </div>
     <div class="footer margin">
-                For more information, see <a href="https://jellyware.jp/kurage" target="_blank">jellyware.jp</a> and <a href="https://github.com/electricbaka/bluejelly" target="_blank">GitHub</a> !
+                For more information, see <a href="https://github.com/foster-hearable/PPGFrontend" target="_blank">GitHub</a> !
     </div>
 </div>
 
@@ -51,8 +52,18 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         'TOUCH' : 1<<1,
         'OPENED': 1<<7,
     }
-    gPPGPeak = -1
     gPPM     = -1
+    gPPGPeakPos = 0
+    gPPGPeakNeg = 0
+
+    gPPG_Phase = 1
+    ppg_invert = function() {
+        if (gPPG_Phase > 0) {
+            gPPG_Phase = -1
+        } else {
+            gPPG_Phase =  1
+        }
+    }
 </script>
 <script>
     const ble = new BlueJelly();
@@ -94,7 +105,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('status').innerHTML = "Bytes received"
 
         if (uuid == 'PPG') {
-            var tmp_max = 0
+            var tmp_max =  gPPGPeakPos
+            var tmp_min = -gPPGPeakNeg
             for (var i=3; i<d.length; i+=2){
                 var tmp = d[i] + d[i+1]*0x100
                 if (tmp > 32768) {
@@ -105,8 +117,12 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
                 if (tmp_max < tmp) {
                     tmp_max = tmp
                 }
+                if (tmp_min > tmp) {
+                    tmp_min = tmp
+                }
             }
-            gPPGPeak = tmp_max
+            gPPGPeakPos =  tmp_max
+            gPPGPeakNeg = -tmp_min
             //console.log(gPPGPeak)
         }
         if (uuid == 'HEARTRATE') {
@@ -234,13 +250,13 @@ document.getElementById('stopNotifications').addEventListener('click', function(
     robin_close();
 });
 
-document.getElementById('Reposition').addEventListener('click', function(e) {
-    robin_reposition();
+document.getElementById('Invert').addEventListener('click', function(e) {
+    ppg_invert();
 });
 </script>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.1.1/chart.min.js"></script>
+<script type="text/javascript" src="chart.min.js"></script>
 <script>
     var chrt_1 = document.getElementById("canvas_1").getContext("2d");
     var chartId_1 = new Chart(chrt_1, {
@@ -256,7 +272,7 @@ document.getElementById('Reposition').addEventListener('click', function(e) {
             }],
         },
         options: {
-            animation: true,
+            animation: false,
             responsive: false,
             plugins: {
                 legend: {
@@ -314,23 +330,40 @@ document.getElementById('Reposition').addEventListener('click', function(e) {
         },
     });
 
+    var peak_hold = 0
     let timerId = setInterval(() => {
-        if (gPPGPeak > 0) {
-            chartId_1.data.datasets[0].data = [gPPGPeak]
-            chartId_1.update();
-            gPPGPeak = -1
+        if (chartId_1.data.datasets[0].data[0] > 0) {
+            if (peak_hold > 0) {
+                peak_hold -= 1
+            }
+            if (peak_hold == 0) {
+                chartId_1.data.datasets[0].data[0] -= 1
+            }
         }
-        gPPGPeak -= 300
+        if (chartId_1.data.datasets[0].data[0] < 0) {
+            chartId_1.data.datasets[0].data[0] = 0
+        }
+        
+        var gPPGPeak = (gPPG_Phase > 0)? gPPGPeakPos : gPPGPeakNeg
+
+        if (chartId_1.data.datasets[0].data[0] < gPPGPeak) {
+            chartId_1.data.datasets[0].data[0] = gPPGPeak
+            gPPGPeakPos  = 0
+            gPPGPeakNeg  = 0
+            peak_hold = 30
+        }
+        //console.log(chartId_1.data.datasets[0].data[0])
+        chartId_1.update();
 
         if (gPPM > 0) {
             chartId_2.data.datasets[0].data.push(gPPM);
             if (chartId_2.data.datasets[0].data.length > 100) {
                 chartId_2.data.datasets[0].data.shift()
             }
-            chartId_2.update();
             gPPM = -1;
         }
-    }, 300);
+        chartId_2.update();
+    }, 1);
 </script>
 
 </body>
