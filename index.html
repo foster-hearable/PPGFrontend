@@ -1,0 +1,226 @@
+<!doctype html>
+<!--
+Copyright 2017-2020 JellyWare Inc. All Rights Reserved.
+-->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="BlueJelly">
+    <meta name="viewport" content="width=640, maximum-scale=1.0, user-scalable=yes">
+    <title>BlueJelly</title>
+    <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700,900" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="style.css">
+  </head>
+<body>
+<div class="container">
+    <div class="title margin">
+        <p id="title">BlueJelly Sample</p>
+        <p id="subtitle">Notifyでデータ読み込み</p>
+    </div>
+
+    <div class="threeD">
+        <canvas id="myCanvas"></canvas>
+    </div>
+    <div class="contents margin">
+        <button id="startNotifications" class="button">Start Notify</button>
+        <button id="stopNotifications" class="button">Stop Notify</button>
+        <button id="Reposition" class="button">Reposition</button>
+        <hr>
+        <div id="device_name"> </div>
+        <div id="uuid_name"> </div>
+        <div id="data_text"> </div>
+        <div id="status"> </div>
+    </div>
+    <div class="footer margin">
+                For more information, see <a href="https://jellyware.jp/kurage" target="_blank">jellyware.jp</a> and <a href="https://github.com/electricbaka/bluejelly" target="_blank">GitHub</a> !
+    </div>
+</div>
+
+    
+<script type="text/javascript" src="bluejelly.js"></script>
+<script>
+    gPPG = []
+    gStatus   = 0
+    var flgStatus = {
+        'WEAR'  : 1<<0,
+        'TOUCH' : 1<<1,
+        'OPENED': 1<<7,
+    }
+</script>
+<script>
+    const ble = new BlueJelly();
+
+    //--------------------------------------------------
+    //Scan後の処理
+    //--------------------------------------------------
+    ble.onScan = function (deviceName) {
+        console.log('onScan() : ' + deviceName)
+        document.getElementById('device_name').innerHTML = deviceName;
+        document.getElementById('status').innerHTML = "found device!";
+
+        gStatus |= flgStatus.OPENED
+    }
+
+    //--------------------------------------------------
+    //ConnectGATT後の処理
+    //--------------------------------------------------
+    ble.onConnectGATT = function (uuid) {
+        console.log('> connected GATT!');
+
+        document.getElementById('uuid_name').innerHTML = uuid;
+        document.getElementById('status').innerHTML = "connected GATT!";
+    }
+
+    //--------------------------------------------------
+    //Read後の処理：得られたデータの表示など行う
+    //--------------------------------------------------
+    ble.onRead = function (data, uuid){
+        var length = data.byteLength;
+        var d = []
+        for (var i=0; i<length; i++){
+            d.push(data.getUint8(i))
+        }
+        console.log(d)
+
+        document.getElementById('data_text').innerHTML = length;
+        document.getElementById('uuid_name').innerHTML = uuid;
+        document.getElementById('status').innerHTML = "Bytes received"
+
+        for (var i=3; i<d.length; i+=2){
+            tmp = d[i] + d[i+1]*0x100
+            if (tmp > 32768) {
+                tmp -= 65536
+            }
+            gPPG.push(tmp)
+        }
+    }
+
+    ble.onWrite = function(uuid){
+        console.log('> onWrite! ' + uuid);
+        if (uuid == 'PPGFORMAT') {
+            ble.write('ROLLSWAP',  [0x00])
+            ble.write('DORMANT',   [0x00])
+            ble.startNotify('PPG');
+        }
+    }
+
+    //--------------------------------------------------
+    //Start Notify後の処理
+    //--------------------------------------------------
+    ble.onStartNotify = function(uuid){
+        console.log('> Start Notify! ' + uuid);
+
+        document.getElementById('uuid_name').innerHTML = uuid;
+        document.getElementById('status').innerHTML = "started Notify";
+
+        document.getElementById("startNotifications").setAttribute("disabled","disabled");
+        document.getElementById("stopNotifications").removeAttribute("disabled");
+    }
+
+
+    //--------------------------------------------------
+    //Stop Notify後の処理
+    //--------------------------------------------------
+    ble.onStopNotify = function(uuid){
+        console.log('> Stop Notify!');
+        gStatus = 0
+
+        document.getElementById('uuid_name').innerHTML = uuid;
+        document.getElementById('status').innerHTML = "stopped Notify";
+
+        document.getElementById("startNotifications").setAttribute("disabled","disabled");
+        document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+    }
+
+    robin_init = function() {
+        //-------------------------------------------------
+        //-------------------------------------------------
+        Object.defineProperty(document, 'ROBIN2_PPG_SERVICE', {value: "41002100-0000-1000-8000-00805f9b0230", writable: false});
+        Object.defineProperty(document, 'ROBIN2_PPG',         {value: "41002101-0000-1000-8000-00805f9b0230", writable: false});
+        Object.defineProperty(document, 'ROBIN2_PPGFORMAT',   {value: "41002102-0000-1000-8000-00805f9b0230", writable: false});
+        Object.defineProperty(document, 'ROBIN2_COMMON_SERVICE',  {value: "41001000-0000-1000-8000-00805f9b0230", writable: false});
+        Object.defineProperty(document, 'ROBIN2_COMMON_GETBDA',   {value: "41001002-0000-1000-8000-00805f9b0230", writable: false});
+        Object.defineProperty(document, 'ROBIN2_COMMON_DORMANT',  {value: "41001010-0000-1000-8000-00805f9b0230", writable: false});
+        Object.defineProperty(document, 'ROBIN2_COMMON_ROLLSWAP', {value: "41001030-0000-1000-8000-00805f9b0230", writable: false});
+
+        //UUIDの設定
+        ble.setUUID("PPG", document.ROBIN2_PPG_SERVICE, document.ROBIN2_PPG);
+        ble.setUUID("PPGFORMAT", document.ROBIN2_PPG_SERVICE, document.ROBIN2_PPGFORMAT);
+        ble.setUUID("ROLLSWAP",  document.ROBIN2_COMMON_SERVICE, document.ROBIN2_COMMON_ROLLSWAP);
+        ble.setUUID("DORMANT",   document.ROBIN2_COMMON_SERVICE, document.ROBIN2_COMMON_DORMANT);
+        ble.setUUID("GETBDA",    document.ROBIN2_COMMON_SERVICE, document.ROBIN2_COMMON_GETBDA);
+    }
+
+    robin_open = function() {
+        ble.write('PPGFORMAT', [0x00])
+    }
+
+    robin_close = function() {
+        ble.stopNotify('PPG');
+    }
+
+    robin_reposition = function () {
+        QuatReposition()
+    }
+</script>
+
+
+
+<script>
+
+//--------------------------------------------------
+//WebSocketのセットアップ
+//--------------------------------------------------
+const sock = new WebSocket('ws://127.0.0.1:6301');
+sock.addEventListener('open',function(e){
+    console.log('Socket successfully opened.');
+    window.setInterval(function(){
+        if (gStatus & flgStatus.OPENED) {
+            if (gPPG.length > 0) {
+                //console.log(gPPG.length)
+                sock.send(gPPG);
+                gPPG = []
+            }
+        }
+    }, 1000);
+});
+sock.onclose = () => {
+    console.log('Socket Closed.');        
+}
+sock.onmessage = function(e) {
+    console.log(e.data)
+}
+
+
+
+
+//--------------------------------------------------
+//ロード時の処理
+//--------------------------------------------------
+window.onload = function () {
+  robin_init();
+  
+  document.getElementById("startNotifications").removeAttribute("disabled");
+  document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+}
+
+//-------------------------------------------------
+//ボタンが押された時のイベント登録
+//--------------------------------------------------
+document.getElementById('startNotifications').addEventListener('click', function(e) {
+    robin_open();
+});
+
+document.getElementById('stopNotifications').addEventListener('click', function() {
+    robin_close();
+});
+
+document.getElementById('Reposition').addEventListener('click', function(e) {
+    robin_reposition();
+});
+
+
+</script>
+</body>
+</html>
