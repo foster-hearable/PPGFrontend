@@ -31,6 +31,12 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
         <button id="Invert" class="button">Invert</button>
+        <br/>
+        <br/>
+        <div id="message">
+            <label>WebSocket URL : <input type="text" id="ws_url" size="30" value="ws://127.0.0.1:6301"></label>
+            <button id="WebSocket" class="button">Connect</button>    
+        </div>
         <hr>
         <div id="device_name"> </div>
         <div id="uuid_name"> </div>
@@ -45,6 +51,9 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     
 <script type="text/javascript" src="bluejelly.js"></script>
 <script>
+    //--------------------------------------------------
+    //Globals
+    //--------------------------------------------------
     gPPG = []
     gStatus   = 0
     var flgStatus = {
@@ -66,10 +75,11 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     }
 </script>
 <script>
+    //--------------------------------------------------
+    //Web Bluetooth Wrappers
+    //--------------------------------------------------
     const ble = new BlueJelly();
 
-    //--------------------------------------------------
-    //Scan後の処理
     //--------------------------------------------------
     ble.onScan = function (deviceName) {
         console.log('onScan() : ' + deviceName)
@@ -80,8 +90,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     }
 
     //--------------------------------------------------
-    //ConnectGATT後の処理
-    //--------------------------------------------------
     ble.onConnectGATT = function (uuid) {
         console.log('> connected GATT!');
 
@@ -89,8 +97,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('status').innerHTML = "connected GATT!";
     }
 
-    //--------------------------------------------------
-    //Read後の処理：得られたデータの表示など行う
     //--------------------------------------------------
     ble.onRead = function (data, uuid){
         var length = data.byteLength;
@@ -131,6 +137,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         }
     }
 
+    //--------------------------------------------------
     ble.onWrite = function(uuid){
         console.log('> onWrite! ' + uuid);
         if (uuid == 'PPGFORMAT') {
@@ -142,8 +149,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     }
 
     //--------------------------------------------------
-    //Start Notify後の処理
-    //--------------------------------------------------
     ble.onStartNotify = function(uuid){
         console.log('> Start Notify! ' + uuid);
 
@@ -154,9 +159,6 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById("stopNotifications").removeAttribute("disabled");
     }
 
-
-    //--------------------------------------------------
-    //Stop Notify後の処理
     //--------------------------------------------------
     ble.onStopNotify = function(uuid){
         console.log('> Stop Notify!');
@@ -169,9 +171,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById("stopNotifications").setAttribute("disabled","disabled");
     }
 
+    //-------------------------------------------------
     robin_init = function() {
-        //-------------------------------------------------
-        //-------------------------------------------------
         Object.defineProperty(document, 'ROBIN2_PPG_SERVICE', {value: "41002100-0000-1000-8000-00805f9b0230", writable: false});
         Object.defineProperty(document, 'ROBIN2_PPG',         {value: "41002101-0000-1000-8000-00805f9b0230", writable: false});
         Object.defineProperty(document, 'ROBIN2_PPGFORMAT',   {value: "41002102-0000-1000-8000-00805f9b0230", writable: false});
@@ -206,58 +207,80 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 
 
 <script>
-//--------------------------------------------------
-//WebSocketのセットアップ
-//--------------------------------------------------
-const sock = new WebSocket('ws://127.0.0.1:6301');
-sock.addEventListener('open',function(e){
-    console.log('Socket successfully opened.');
-    window.setInterval(function(){
-        if (gStatus & flgStatus.OPENED) {
-            if (gPPG.length > 0) {
-                //console.log(gPPG.length)
-                sock.send(gPPG);
-                gPPG = []
+    //--------------------------------------------------
+    //WebSocket
+    //--------------------------------------------------
+    let wsurl_element = document.getElementById('ws_url');
+    let sock = null
+
+    ws_refresh = function() {
+        if (wsurl_element.disabled) {
+            console.log('WebSocket: Close.');        
+            sock.close()
+        } else {
+            console.log('WebSocket: Reconnect.');        
+            sock = new WebSocket(wsurl_element.value);
+
+            sock.addEventListener('open',function(e){
+                console.log('WebSocket: Connected.');
+                document.getElementById('WebSocket').textContent = "Disconnect"
+                wsurl_element.disabled = true
+
+                window.setInterval(function(){
+                    if ((gStatus & flgStatus.OPENED) && (wsurl_element.disabled)) {
+                        if (gPPG.length > 0) {
+                            //console.log(gPPG.length)
+                            sock.send(gPPG);
+                            gPPG = []
+                        }
+                    }
+                }, 1000);
+            });
+            sock.onclose = () => {
+                console.log('WebSocket: Closed.');        
+                document.getElementById('WebSocket').textContent = "Connect"
+                wsurl_element.disabled = false
+            }
+            sock.onmessage = function(e) {
+                console.log(e.data)
             }
         }
-    }, 1000);
-});
-sock.onclose = () => {
-    console.log('Socket Closed.');        
-}
-sock.onmessage = function(e) {
-    console.log(e.data)
-}
+    }
+    ws_refresh()
 
-//--------------------------------------------------
-//ロード時の処理
-//--------------------------------------------------
-window.onload = function () {
-  robin_init();
-  
-  document.getElementById("startNotifications").removeAttribute("disabled");
-  document.getElementById("stopNotifications").setAttribute("disabled","disabled");
-}
+    //--------------------------------------------------
+    // Onload setups and Buttons
+    //--------------------------------------------------
+    window.onload = function () {
+    robin_init();
+    
+    document.getElementById("startNotifications").removeAttribute("disabled");
+    document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+    }
 
-//-------------------------------------------------
-//ボタンが押された時のイベント登録
-//--------------------------------------------------
-document.getElementById('startNotifications').addEventListener('click', function(e) {
-    robin_open();
-});
+    document.getElementById('startNotifications').addEventListener('click', function(e) {
+        robin_open();
+    });
 
-document.getElementById('stopNotifications').addEventListener('click', function() {
-    robin_close();
-});
+    document.getElementById('stopNotifications').addEventListener('click', function() {
+        robin_close();
+    });
 
-document.getElementById('Invert').addEventListener('click', function(e) {
-    ppg_invert();
-});
+    document.getElementById('Invert').addEventListener('click', function(e) {
+        ppg_invert();
+    });
+
+    document.getElementById('WebSocket').addEventListener('click', function(e) {
+        ws_refresh();
+    });
 </script>
 
 
 <script type="text/javascript" src="chart.min.js"></script>
 <script>
+    //--------------------------------------------------
+    // Charts and PPG singnal processings
+    //--------------------------------------------------
     var chrt_1 = document.getElementById("canvas_1").getContext("2d");
     var chartId_1 = new Chart(chrt_1, {
         type: 'bar',
@@ -330,6 +353,7 @@ document.getElementById('Invert').addEventListener('click', function(e) {
         },
     });
 
+    //--------------------------------------------------
     var peak_hold = 0
     let timerId = setInterval(() => {
         if (chartId_1.data.datasets[0].data[0] > 0) {

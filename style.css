@@ -22,6 +22,10 @@ html, body {
 	position: relative;
   background-color: #f0f0f0;
 }
+input[type="text"]{
+    font-family: inherit;
+    color: #4d4d4d;
+}
 
 hr{
   border-width: 1px;
@@ -140,7 +144,7 @@ hr{
   font-weight: 300;
 }
 
-#status, #status2{
+#status, #status2, #message{
 	color:#448aff;
 	font-size:14px;
   font-weight: 300;
