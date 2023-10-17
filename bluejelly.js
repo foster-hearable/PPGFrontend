@@ -13,6 +13,8 @@ This software is released under the MIT License.
 
 Web Bluetooth API
 https://webbluetoothcg.github.io/web-bluetooth/
+
+*** Some modifications were applied for Foster-Hearable on 2023 ***
 */
 
 //--------------------------------------------------
