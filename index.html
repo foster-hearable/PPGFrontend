@@ -1,55 +1,60 @@
 <!doctype html>
 <!--
-Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
+Copyright 2023 Foster Electric Co., Ltd.
+Released under the MIT license
 -->
 <html>
+  <style>
+    .flex {
+        display: -webkit-flex;
+        display: -moz-flex;
+        display: -ms-flex;
+        display: -o-flex;
+        display: flex;
+        gap: 6px 6px;
+    }    
+  </style>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="Foster Hearable">
     <meta name="viewport" content="width=640, maximum-scale=1.0, user-scalable=yes">
     <title>Foster Hearable</title>
-    <link href="https://fonts.googleapis.com/css?family=Lato:100,300,400,700,900" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./components/simple.css"> 
   </head>
 <body>
 <div class="container">
-    <div class="title margin">
-        <p id="title">Foster Hearable</p>
-        <p id="subtitle">PPG, HeartRate Frontend</p>
-    </div>
+    <h1>Foster Hearable</h1>
+    <p>PPG, HeartRate Frontend</p>
 
-    <div class="chart">
-        <div class="meter" >
-            <canvas id="canvas_1" width="100px" height="350px"></canvas>
-        </div>
-        <div class="graph">
-            <canvas id="canvas_2" width="500px" height="350px"></canvas>
-        </div>
+    <div class="flex" >
+        <canvas id="canvas_1" width="100px" height="350px"></canvas>
+        <canvas id="canvas_2" width="500px" height="350px"></canvas>
     </div>
-    <div class="contents margin">
+    <br/>
+    <div class="flex" >
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
         <button id="Invert" class="button">Invert</button>
-        <br/>
-        <br/>
-        <div id="message">
-            <label>WebSocket URL : <input type="text" id="ws_url" size="30" value="ws://127.0.0.1:6301"></label>
-            <button id="WebSocket" class="button">Connect</button>    
-        </div>
-        <hr>
-        <div id="device_name"> </div>
-        <div id="uuid_name"> </div>
-        <div id="data_text"> </div>
-        <div id="status"> </div>
     </div>
-    <div class="footer margin">
+    <br/>
+    <div class="flex" >
+        <label>WebSocket URL : <input type="text" id="ws_url" size="40" value="ws://127.0.0.1:6301"></label>
+        <button id="WebSocket" class="button">Connect</button>    
+    </div>
+    <div class="code"><pre>
+    <span id="device_name"> </span>
+    <span id="uuid_name"> </span>
+    <span id="data_text"> </span><span id="status"> </span></pre>
+    </div>
+    <hr>
+    <div class="footer">
         For more information, see <a href="https://github.com/foster-hearable/PPGFrontend" target="_blank">GitHub</a> !
     </div>
 </div>
 
     
-<script type="text/javascript" src="bluejelly.js"></script>
+<script type="text/javascript" src="./components/bluejelly.js"></script>
 <script>
     //--------------------------------------------------
     //Globals
@@ -155,8 +160,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('uuid_name').innerHTML = uuid;
         document.getElementById('status').innerHTML = "started Notify";
 
-        document.getElementById("startNotifications").setAttribute("disabled","disabled");
-        document.getElementById("stopNotifications").removeAttribute("disabled");
+        document.getElementById("startNotifications").disabled = true;
+        document.getElementById("stopNotifications").disabled  = false;
     }
 
     //--------------------------------------------------
@@ -167,8 +172,8 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
         document.getElementById('uuid_name').innerHTML = uuid;
         document.getElementById('status').innerHTML = "stopped Notify";
 
-        document.getElementById("startNotifications").setAttribute("disabled","disabled");
-        document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+        document.getElementById("startNotifications").disabled = true;
+        document.getElementById("stopNotifications").disabled  = true;
     }
 
     //-------------------------------------------------
@@ -252,10 +257,10 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
     // Onload setups and Buttons
     //--------------------------------------------------
     window.onload = function () {
-    robin_init();
-    
-    document.getElementById("startNotifications").removeAttribute("disabled");
-    document.getElementById("stopNotifications").setAttribute("disabled","disabled");
+        robin_init();
+        
+        document.getElementById("startNotifications").disabled = false;
+        document.getElementById("stopNotifications").disabled  = true;
     }
 
     document.getElementById('startNotifications').addEventListener('click', function(e) {
@@ -276,7 +281,7 @@ Copyright 2023 Foster Electric Co., Ltd. Inc. All Rights Reserved.
 </script>
 
 
-<script type="text/javascript" src="chart.min.js"></script>
+<script type="text/javascript" src="./components/chart.min.js"></script>
 <script>
     //--------------------------------------------------
     // Charts and PPG singnal processings
