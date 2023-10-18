@@ -45,7 +45,7 @@ Released under the MIT license
     <div class="code"><pre>
     <span id="device_name"> </span>
     <span id="uuid_name"> </span>
-    <span id="data_text"> </span><span id="status"> </span></pre>
+    <span id="status"> </span></pre>
     </div>
     <hr>
     <div class="footer">
@@ -111,9 +111,8 @@ Released under the MIT license
         }
         //console.log(d)
 
-        document.getElementById('data_text').innerHTML = length;
         document.getElementById('uuid_name').innerHTML = uuid;
-        document.getElementById('status').innerHTML = "Bytes received"
+        document.getElementById('status').innerHTML = length + "Bytes received"
 
         if (uuid == 'PPG') {
             var tmp_max =  gPPGPeakPos
