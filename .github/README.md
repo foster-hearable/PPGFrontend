@@ -45,15 +45,7 @@ WebSocketで送られてきたヒアラブルデバイスの脈波データを�
 <img src="Expand.png" width="450">
 
 #### WebSocketデータフォーマット
-コンマ区切りで下記順序のデータ列を送出します。
-
-|   | データ種別 | フォーマット |
-|-|-|-|
-| 1 | ステータス | bit7-2:使用せず、bit1:タッチ操作(1:ON、0:OFF)、bit0:装着(1:ON、0:OFF) |
-| 2 | W成分 | Float値によるQuaternionのW成分データ |
-| 3 | X成分 | Float値によるQuaternionのX成分データ |
-| 4 | Y成分 | Float値によるQuaternionのY成分データ |
-| 5 | Z成分 | Float値によるQuaternionのZ成分データ |
+コンマ区切りで加速度脈波（RAWデータ Int値：-32767〜32768）のデータ列を送出します。
 
 
 ## 注意事項
