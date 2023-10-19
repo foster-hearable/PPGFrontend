@@ -35,7 +35,7 @@ Released under the MIT license
     <div class="flex" >
         <button id="startNotifications" class="button">Start Notify</button>
         <button id="stopNotifications" class="button">Stop Notify</button>
-        <button id="Invert" class="button">Invert</button>
+        <button id="MultiFunctionButton" class="button">Invert</button>
     </div>
     <br/>
     <div class="flex" >
@@ -77,6 +77,7 @@ Released under the MIT license
         } else {
             gPPG_Phase =  1
         }
+        console.log("PPG Phase : " + gPPG_Phase)
     }
 </script>
 <script>
@@ -202,10 +203,16 @@ Released under the MIT license
 
     robin_close = function() {
         ble.stopNotify('PPG');
+        ble.stopNotify('HEARTRATE');
+        document.getElementById('MultiFunctionButton').textContent = "Reload"
     }
 
-    robin_reposition = function () {
-        QuatReposition()
+    robin_mfb = function () {
+        if (document.getElementById('MultiFunctionButton').textContent == "Reload") {
+            location.reload()            
+        } else {
+            ppg_invert()
+        }
     }
 </script>
 
@@ -270,8 +277,8 @@ Released under the MIT license
         robin_close();
     });
 
-    document.getElementById('Invert').addEventListener('click', function(e) {
-        ppg_invert();
+    document.getElementById('MultiFunctionButton').addEventListener('click', function(e) {
+        robin_mfb();
     });
 
     document.getElementById('WebSocket').addEventListener('click', function(e) {
