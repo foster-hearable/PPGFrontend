@@ -1,7 +1,7 @@
 # Hearable PPGFrontend
 ---
 ## Overview
-Hearable PPGFrontendはヒアラブルデバイス（フォスター電機 RN002）に実装されているハートレート機能のフロントエンドアプリケーションです。
+Hearable PPGFrontendはヒアラブルデバイス（フォスター電機 RN002）に実装されているハートレート機能のフロントエンドアプリケーションです。（デモ用Webサイト [https://foster-hearable.github.io/PPGFrontend/](https://foster-hearable.github.io/PPGFrontend/)）
 
 WebBluetoothを用いてヒアラブルデバイスRN002からデータ取得を行い、ハートレート情報の表示やWebSocketサーバーへのデータ送出を行います。\
 WebSocketのデータは加速度脈波のRAWデータで構成されているため、WebSocketサーバー側での加工や解析に用いることができます。
