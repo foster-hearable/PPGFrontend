@@ -11,12 +11,12 @@ WebSocketのデータは加速度脈波のRAWデータで構成されている�
 WebBluetoothに対応したブラウザ　参考：[ブラウザー互換性一覧表 Mozilla.org](https://developer.mozilla.org/ja/docs/Web/API/Web_Bluetooth_API#ブラウザーの互換性)
 
 #### 動作することを確認しているブラウザ
-- Chrome（Windows,Mac）
+- Chrome（Windows,Mac,Android）
 - Edge（Windows,Mac）
   
 #### 動作しないことを確認しているブラウザ
 - Safari（Mac,iOS）
-
+- Chrome (iOS)
 
 
 ## 操作インターフェース
