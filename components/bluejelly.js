@@ -20,7 +20,7 @@ https://webbluetoothcg.github.io/web-bluetooth/
 //--------------------------------------------------
 //BlueJelly constructor
 //--------------------------------------------------
-var BlueJelly = function(){
+var BlueJelly = function(namePrefix="LE"){
   this.bluetoothDevice = null;
   
   this.hashUUID ={};
@@ -37,6 +37,8 @@ var BlueJelly = function(){
   this.onClear = function(){console.log("onClear");};
   this.onReset = function(){console.log("onReset");};
   this.onError = function(error){console.log("onError");};
+
+  this.namePrefix = namePrefix
 }
 
 
@@ -76,7 +78,7 @@ BlueJelly.prototype.requestDevice = function(uuid) {
 
   return navigator.bluetooth.requestDevice({
     filters: [
-        {namePrefix: "LE-RN"}
+        {namePrefix: this.namePrefix}
     ],
     optionalServices: uuid_list})
   .then(device => {
@@ -169,7 +171,7 @@ BlueJelly.prototype.write = function(uuid, array_value) {
   .then( () => {
     console.log('Execute : writeValue');
     data = Uint8Array.from(array_value);
-    return this.hashUUID[uuid].dataCharacteristic.writeValueWithoutResponse(data);
+    return this.hashUUID[uuid].dataCharacteristic.writeValueWithResponse(data);
   })
   .then( () => {
     console.log('Execute : writeValue : ' + array_value);
